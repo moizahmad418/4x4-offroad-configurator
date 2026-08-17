@@ -1,7 +1,7 @@
 # 4x4 Builder
 
 [![Live Demo](https://img.shields.io/badge/demo-4x4builder.com-blue)](https://4x4builder.com)
-(https://moizahmad418.github.io/4x4-offroad-configurator/)
+[![GitHub Stars](https://moizahmad418.github.io/4x4-offroad-configurator/)
 
 ![4x4 Builder Screenshot](assets/images/screenshot.png)
 
