@@ -1,0 +1,387 @@
+import { MessageTypes, createMessage } from './protocol.js'
+
+// Default server URL - can be overridden
+const DEFAULT_SERVER_URL = 'ws://localhost:8080'
+
+// Connection states
+export const ConnectionState = {
+	DISCONNECTED: 'disconnected',
+	CONNECTING: 'connecting',
+	CONNECTED: 'connected',
+	RECONNECTING: 'reconnecting',
+}
+
+// Network Manager - handles WebSocket connection and message routing
+export default class NetworkManager {
+	constructor(options = {}) {
+		this.serverUrl = options.serverUrl || DEFAULT_SERVER_URL
+		this.ws = null
+		this.state = ConnectionState.DISCONNECTED
+		this.playerId = null
+		
+		// Track ongoing connection promise
+		this.connectPromise = null
+		
+		// Reconnection settings
+		this.reconnectAttempts = 0
+		this.maxReconnectAttempts = options.maxReconnectAttempts || 5
+		this.reconnectDelay = options.reconnectDelay || 1000
+		this.reconnectTimer = null
+		
+		// Connection retry timer (for initial connection attempts)
+		this.connectionRetryTimer = null
+		
+		// Latency tracking
+		this.latency = 0
+		this.pingInterval = null
+		this.lastPingTime = 0
+		
+		// Event callbacks
+		this.callbacks = {
+			onStateChange: null,
+			onWelcome: null,
+			onLobbyInfo: null,
+			onError: null,
+			onRoomEntered: null,
+			onRoomLeft: null,
+			onRoomState: null,
+			onRoomClosed: null,
+			onPlayerJoined: null,
+			onPlayerLeft: null,
+			onPlayerUpdate: null,
+			onPlayerNameUpdate: null,
+			onVehicleConfig: null,
+			onVehicleReset: null,
+			onChatMessage: null,
+		}
+	}
+	
+	// Set callback
+	on(event, callback) {
+		if (event in this.callbacks) {
+			this.callbacks[event] = callback
+		}
+		return this
+	}
+	
+	// Remove callback
+	off(event) {
+		if (event in this.callbacks) {
+			this.callbacks[event] = null
+		}
+		return this
+	}
+	
+	// Connect to server (with retry for cold boot scenarios)
+	connect(retryForColdBoot = true) {
+		// If already connected, return immediately
+		if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+			return Promise.resolve()
+		}
+		
+		// If currently connecting, return the existing promise
+		if (this.connectPromise) {
+			console.log('Connection already in progress, waiting...')
+			return this.connectPromise
+		}
+		
+		// For cold boot, allow more attempts over a longer period (up to ~90 seconds)
+		const maxAttempts = retryForColdBoot ? 30 : 1
+		const baseDelay = 3000 // 3 seconds between retries
+		
+		this.connectPromise = new Promise((resolve, reject) => {
+			let attempts = 0
+			
+			const tryConnect = () => {
+				attempts++
+				this.setState(ConnectionState.CONNECTING)
+				
+				try {
+					this.ws = new WebSocket(this.serverUrl)
+					
+					this.ws.onopen = () => {
+						console.log('Connected to multiplayer server')
+						this.reconnectAttempts = 0
+						this.setState(ConnectionState.CONNECTED)
+						this.startPingInterval()
+						this.connectPromise = null
+						resolve()
+					}
+					
+					this.ws.onclose = (event) => {
+						this.stopPingInterval()
+						// Only log and handle reconnect if we were previously connected (not during initial connect)
+						if (this.state === ConnectionState.CONNECTED) {
+							console.log('Disconnected from server:', event.code, event.reason)
+							this.handleDisconnect()
+						}
+					}
+					
+					this.ws.onerror = () => {
+						// Silently handle errors during connection attempts - they will trigger retries
+						if (this.state === ConnectionState.CONNECTING) {
+							// Retry if we haven't exceeded max attempts
+							if (attempts < maxAttempts) {
+								console.log(`Connection failed, retrying in ${baseDelay}ms (attempt ${attempts}/${maxAttempts})`)
+								this.connectionRetryTimer = setTimeout(tryConnect, baseDelay)
+							} else {
+								this.connectionRetryTimer = null
+								this.setState(ConnectionState.DISCONNECTED)
+								this.connectPromise = null
+								reject(new Error('Failed to connect to server. Please check if the server is running.'))
+							}
+						}
+					}
+					
+					this.ws.onmessage = (event) => {
+						this.handleMessage(event.data)
+					}
+				} catch (error) {
+					this.setState(ConnectionState.DISCONNECTED)
+					this.connectPromise = null
+					reject(error)
+				}
+			}
+			
+			tryConnect()
+		})
+		
+		return this.connectPromise
+	}
+	
+	// Disconnect from server
+	disconnect() {
+		this.stopReconnect()
+		this.stopPingInterval()
+		
+		// Cancel any pending connection retry
+		if (this.connectionRetryTimer) {
+			clearTimeout(this.connectionRetryTimer)
+			this.connectionRetryTimer = null
+		}
+		
+		// Clear connection promise
+		this.connectPromise = null
+		
+		if (this.ws) {
+			this.ws.close(1000, 'Client disconnect')
+			this.ws = null
+		}
+		
+		this.playerId = null
+		this.setState(ConnectionState.DISCONNECTED)
+	}
+	
+	// Handle disconnection
+	handleDisconnect() {
+		this.setState(ConnectionState.DISCONNECTED)
+		
+		// Attempt reconnection if we were previously connected
+		if (this.reconnectAttempts < this.maxReconnectAttempts) {
+			this.attemptReconnect()
+		}
+	}
+	
+	// Attempt to reconnect
+	attemptReconnect() {
+		this.stopReconnect()
+		this.setState(ConnectionState.RECONNECTING)
+		
+		const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts)
+		console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`)
+		
+		this.reconnectTimer = setTimeout(async () => {
+			this.reconnectAttempts++
+			try {
+				await this.connect()
+			} catch (error) {
+				console.error('Reconnection failed:', error)
+				if (this.reconnectAttempts < this.maxReconnectAttempts) {
+					this.attemptReconnect()
+				} else {
+					console.log('Max reconnection attempts reached')
+					this.setState(ConnectionState.DISCONNECTED)
+				}
+			}
+		}, delay)
+	}
+	
+	// Stop reconnection attempts
+	stopReconnect() {
+		if (this.reconnectTimer) {
+			clearTimeout(this.reconnectTimer)
+			this.reconnectTimer = null
+		}
+	}
+	
+	// Start ping interval for latency measurement
+	startPingInterval() {
+		this.pingInterval = setInterval(() => {
+			if (this.isConnected()) {
+				this.lastPingTime = Date.now()
+				this.send({
+					type: MessageTypes.PING,
+					clientTime: this.lastPingTime,
+				})
+			}
+		}, 5000) // Ping every 5 seconds
+	}
+	
+	// Stop ping interval
+	stopPingInterval() {
+		if (this.pingInterval) {
+			clearInterval(this.pingInterval)
+			this.pingInterval = null
+		}
+	}
+	
+	// Set state and notify callback
+	setState(state) {
+		this.state = state
+		this.callbacks.onStateChange?.(state)
+	}
+	
+	// Check if connected
+	isConnected() {
+		return this.ws && this.ws.readyState === WebSocket.OPEN
+	}
+	
+	// Send message to server
+	send(message) {
+		if (!this.isConnected()) {
+			const error = new Error('Cannot send message: not connected to server')
+			console.warn(error.message)
+			throw error
+		}
+		
+		try {
+			this.ws.send(JSON.stringify(message))
+			return true
+		} catch (error) {
+			console.error('Failed to send message:', error)
+			throw error
+		}
+	}
+	
+	// Handle incoming message
+	handleMessage(data) {
+		let message
+		try {
+			message = JSON.parse(data)
+		} catch (error) {
+			console.error('Failed to parse message:', error)
+			return
+		}
+		
+		switch (message.type) {
+			case MessageTypes.WELCOME:
+				this.playerId = message.playerId
+				this.callbacks.onWelcome?.(message)
+				break
+				
+			case MessageTypes.LOBBY_INFO:
+				this.callbacks.onLobbyInfo?.(message)
+				break
+				
+			case MessageTypes.PONG:
+				this.latency = Date.now() - message.clientTime
+				break
+				
+			case MessageTypes.ERROR:
+				console.error('Server error:', message)
+				this.callbacks.onError?.(message)
+				break
+				
+			case MessageTypes.ROOM_JOINED:
+				this.callbacks.onRoomEntered?.(message)
+				break
+				
+			case MessageTypes.ROOM_LEFT:
+				this.callbacks.onRoomLeft?.(message)
+				break
+				
+			case MessageTypes.ROOM_STATE:
+				this.callbacks.onRoomState?.(message)
+				break
+				
+			case MessageTypes.ROOM_CLOSED:
+				this.callbacks.onRoomClosed?.(message)
+				break
+				
+			case MessageTypes.PLAYER_JOINED:
+				this.callbacks.onPlayerJoined?.(message)
+				break
+				
+			case MessageTypes.PLAYER_LEFT:
+				this.callbacks.onPlayerLeft?.(message)
+				break
+				
+			case MessageTypes.PLAYER_UPDATE:
+				this.callbacks.onPlayerUpdate?.(message)
+				break
+				
+			case MessageTypes.PLAYER_NAME_UPDATE:
+				this.callbacks.onPlayerNameUpdate?.(message)
+				break
+				
+			case MessageTypes.VEHICLE_CONFIG:
+				this.callbacks.onVehicleConfig?.(message)
+				break
+				
+			case MessageTypes.VEHICLE_RESET:
+				this.callbacks.onVehicleReset?.(message)
+				break
+				
+			case MessageTypes.CHAT_MESSAGE:
+				this.callbacks.onChatMessage?.(message)
+				break
+				
+			default:
+				console.warn('Unknown message type:', message.type)
+		}
+	}
+	
+	// Room actions
+	joinRoom(roomId, playerName, vehicleConfig) {
+		return this.send(createMessage(MessageTypes.JOIN_ROOM, {
+			roomId: roomId?.toUpperCase() || null,
+			playerName,
+			vehicleConfig,
+		}))
+	}
+	
+	leaveRoom() {
+		return this.send(createMessage(MessageTypes.LEAVE_ROOM))
+	}
+	
+	// Player update actions
+	sendPlayerUpdate(transform) {
+		return this.send(createMessage(MessageTypes.PLAYER_UPDATE, transform))
+	}
+	
+	sendPlayerNameUpdate(name) {
+		return this.send(createMessage(MessageTypes.PLAYER_NAME_UPDATE, { name }))
+	}
+	
+	sendVehicleConfig(config) {
+		return this.send(createMessage(MessageTypes.VEHICLE_CONFIG, { config }))
+	}
+	
+	sendVehicleReset(position, rotation) {
+		return this.send(createMessage(MessageTypes.VEHICLE_RESET, { position, rotation }))
+	}
+	
+	sendChatMessage(text) {
+		return this.send(createMessage(MessageTypes.CHAT_MESSAGE, { text }))
+	}
+	
+	// Get current latency
+	getLatency() {
+		return this.latency
+	}
+	
+	// Get player ID
+	getPlayerId() {
+		return this.playerId
+	}
+}

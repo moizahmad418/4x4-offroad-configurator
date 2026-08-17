@@ -1,0 +1,162 @@
+@import 'tailwindcss';
+
+@layer utilities {
+	/* Chrome, Safari and Opera */
+	.scrollbar-none::-webkit-scrollbar {
+		display: none;
+	}
+
+	.scrollbar-none {
+		scrollbar-width: none; /* Firefox */
+		-ms-overflow-style: none; /* IE and Edge */
+	}
+}
+
+@layer base {
+	.wrapper {
+		@apply mx-auto w-7xl max-w-[90vw];
+	}
+
+	/* links */
+	a {
+		@apply underline text-blue-500;
+	}
+
+	/* headings */
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		@apply font-bold;
+	}
+	h1 {
+		@apply mb-6 text-5xl sm:text-7xl md:text-8xl lg:text-8xl font-black uppercase;
+	}
+	h2 {
+		@apply mb-6 text-4xl md:text-5xl leading-tight font-black uppercase;
+	}
+	h3 {
+		@apply mb-4 text-xl font-semibold;
+	}
+
+	/* forms */
+	.field {
+		@apply overflow-hidden;
+	}
+	.field .field {
+		@apply inline-block space-x-5;
+	}
+
+	/* defaults */
+	label {
+		@apply block mb-2 text-sm;
+	}
+	input + label {
+		@apply inline-block;
+	}
+	input,
+	textarea,
+	button,
+	select {
+		@apply p-2.5 max-w-full border border-white/10 bg-black/30 text-stone-200 text-sm rounded shadow-sm outline-none;
+	}
+	select optgroup, select option {
+		@apply max-w-none bg-black/80;
+	}
+	input[type='checkbox'] {
+		@apply mr-2 mt-1;
+	}
+	input[type='range'] {
+		@apply shadow-none;
+	}
+	input[type='color'] {
+		@apply appearance-none p-0 bg-transparent border-none rounded cursor-pointer;
+	}
+	input[type='color']::-webkit-color-swatch-wrapper {
+		@apply p-0;
+	}
+	input[type='color']::-webkit-color-swatch {
+		@apply border-0;
+	}
+
+	/*buttons*/
+	button,
+	.button {
+		@apply flex items-center gap-2 px-5 py-3 text-white font-semibold text-sm uppercase bg-red-700 hover:bg-red-600 border-none rounded shadow-md cursor-pointer;
+	}
+	button.small,
+	.button.small {
+		@apply px-3 py-2.5 text-xs;
+	}
+	button.large,
+	.button.large {
+		@apply px-8 py-4 text-base;
+	}
+	button.active,
+	.button.active {
+		@apply bg-red-500 ring-2 ring-red-400;
+	}
+	button.secondary,
+	.button.secondary {
+		@apply bg-black/50 hover:bg-stone-600 backdrop-blur-sm;
+	}
+	button.success,
+	.button.success {
+		@apply bg-green-700 hover:bg-green-600;
+	}
+
+	/* icons */
+	.icon {
+		@apply inline-block w-5 h-auto align-middle;
+	}
+
+	/* animations */
+	.animate-fade-scale-in {
+		animation: fade-scale-in 0.2s ease-out;
+	}
+	.animate-pop-in {
+		animation: pop-in 0.4s ease-out;
+	}
+}
+
+/* animations */
+@keyframes fade-scale-in {
+	from {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@keyframes pop-in {
+	0% {
+		transform: scale(0);
+		opacity: 0;
+	}
+	50% {
+		transform: scale(1.2);
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+/* loader animation */
+@-webkit-keyframes rotate {
+	100% {
+		-webkit-transform: rotateY(180deg) rotateX(0deg) rotateZ(180deg);
+		transform: rotateY(180deg) rotateX(0deg) rotateZ(180deg);
+	}
+}
+@keyframes rotate {
+	100% {
+		-webkit-transform: rotateY(180deg) rotateX(0deg) rotateZ(180deg);
+		transform: rotateY(180deg) rotateX(0deg) rotateZ(180deg);
+	}
+}
