@@ -160,5 +160,4 @@ Contributions are welcome! Here are some ways you can help:
 ## 📊 Stats
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/theshanergy/4x4builder)
-![GitHub issues](https://img.shields.io/github/issues/theshanergy/4x4builder)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/theshanergy/4x4builder)
