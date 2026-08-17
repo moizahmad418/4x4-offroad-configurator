@@ -1,9 +1,5 @@
 # 4x4 Builder
 
-> **Deploying to GitHub Pages?** See [DEPLOY-GITHUB-PAGES.md](DEPLOY-GITHUB-PAGES.md)
-> for what this project is, why `index.html` can't be opened directly, and the
-> three steps to get a live page.
-
 [![Live Demo](https://img.shields.io/badge/demo-4x4builder.com-blue)](https://4x4builder.com)
 [![GitHub Stars](https://img.shields.io/github/stars/theshanergy/4x4builder?style=social)](https://github.com/theshanergy/4x4builder)
 
