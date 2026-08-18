@@ -152,8 +152,9 @@ Contributions are welcome! Here are some ways you can help:
 
 ---
 
-Portfolio Author
-Moiz Ahmad
+## Portfolio Author
 
-Email: moizahmad418@gmail.com
-LinkedIn: https://www.linkedin.com/in/moizahmad418
+**Moiz Ahmad**
+
+- Email: moizahmad418@gmail.com
+- LinkedIn: https://www.linkedin.com/in/moizahmad418
