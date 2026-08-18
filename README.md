@@ -151,3 +151,9 @@ Contributions are welcome! Here are some ways you can help:
 - [Tailwind CSS](https://tailwindcss.com/) — Styling
 
 ---
+
+Portfolio Author
+Moiz Ahmad
+
+Email: moizahmad418@gmail.com
+LinkedIn: https://www.linkedin.com/in/moizahmad418
