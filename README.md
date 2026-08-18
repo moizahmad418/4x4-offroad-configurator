@@ -1,12 +1,10 @@
-# 4x4 Builder
+# 4x4 OffRoad Configurator
 
 [![Live Demo](https://img.shields.io/badge/demo-4x4builder.com-blue)](https://4x4builder.com)
 
 ![4x4 Builder Screenshot](assets/images/screenshot.png)
 
-**4x4 Builder** is a browser-based 3D off-road vehicle customization and simulation app. Build your dream 4x4, customize every detail from suspension lift to tire size, then drive it through procedurally generated terrain with realistic physics. Features multiplayer support, VR compatibility, and real-time engine audio synthesis.
-
-🌐 **Try it live at [4x4builder.com](https://4x4builder.com)**
+**4x4 OffRoad Configurator** is a browser-based 3D off-road vehicle customization and simulation app. Build your dream 4x4, customize every detail from suspension lift to tire size, then drive it through procedurally generated terrain with realistic physics. Features multiplayer support, VR compatibility, and real-time engine audio synthesis.
 
 ---
 
@@ -155,8 +153,3 @@ Contributions are welcome! Here are some ways you can help:
 - [Tailwind CSS](https://tailwindcss.com/) — Styling
 
 ---
-
-## 📊 Stats
-
-![GitHub last commit](https://img.shields.io/github/last-commit/theshanergy/4x4builder)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/theshanergy/4x4builder)
