@@ -1,7 +1,5 @@
 # 4x4 OffRoad Configurator
 
-[![Live Demo]
-
 ![4x4 Builder Screenshot](assets/images/screenshot.png)
 
 **4x4 OffRoad Configurator** is a browser-based 3D off-road vehicle customization and simulation app. Build your dream 4x4, customize every detail from suspension lift to tire size, then drive it through procedurally generated terrain with realistic physics. Features multiplayer support, VR compatibility, and real-time engine audio synthesis.
