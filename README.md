@@ -1,6 +1,6 @@
 # 4x4 OffRoad Configurator
 
-[![Live Demo](https://img.shields.io/badge/demo-4x4builder.com-blue)](https://4x4builder.com)
+[![Live Demo]
 
 ![4x4 Builder Screenshot](assets/images/screenshot.png)
 
